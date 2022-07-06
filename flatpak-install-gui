@@ -1,0 +1,171 @@
+#!/bin/bash
+
+export SELF=$(readlink -f "${0}")
+export HERE=$(dirname  "${SELF}")
+
+[ -z "XDG_CACHE_DIR" ] && {
+  export XDG_CACHE_DIR="${HOME}/.cache/"
+}
+
+script_pid="$$"
+
+mkdir -p "${XDG_RUNTIME_DIR}/tiger-store/"
+cd "${XDG_RUNTIME_DIR}/tiger-store/"
+
+url="${1}"
+id_progress_bar="${1}"
+
+. /usr/lib/tiger-os/tiger-osd.sh
+
+function install_flatpak() {
+
+  export general_progress=0
+  export progress_block=$((100/$(echo "${dependencies}" | wc -l)))
+
+  [ ! "$((${progress_block}*$(echo -n ${dependencies} | wc -l)))" = "100" ] && {
+    export progress_block=$((${progress_block}+1))
+  }
+
+  export last_great_value=0
+
+  export LC_ALL=C
+  flatpak install ${url} --no-static-deltas -y | while IFS= read -r line; do
+    line=$(echo "${line}" | grep ^"Installing" | grep -o "...%" | grep -o "[0-9]\+")
+    [ ! -z "${line}" ] && {
+      [ ${line} -gt ${last_great_value} ] && {
+        echo "1:${line}"
+        last_great_value=${line}
+      }
+      [ "${line}" == "100" ] && {
+        last_great_value=0
+        general_progress=$((${general_progress}+1))
+      }
+
+      progress=$((${general_progress}*${progress_block}))
+
+      [ ${progress} -gt 100 ] && {
+        progress=100
+      }
+
+      echo "2:${progress}" | tee /dev/stderr
+    }
+  done
+}
+
+function fetchDependencies(){
+  export LC_ALL=C
+  rm "${id_progress_bar}.dependencies"
+    flatpak install "${url}" --no-static-deltas -y | while IFS= read -r line; do
+      number=$(echo "${line}" | sed 's/^[[:space:]]*//g;s/\..*//g' | egrep -x '[0-9]+')
+
+      [ ! "${number}" = "" ] && {
+        echo "${line}" | awk '{print $2}' >> "${id_progress_bar}.dependencies"
+      }
+
+      echo a
+
+      [ -f "${id_progress_bar}.dependencies" ] && {
+        [ "${number}" = "" ] && {
+          cat "${id_progress_bar}.dependencies"
+          chmod 666 "${id_progress_bar}.dependencies"
+
+          pkill -9 -P $(cat "${id_progress_bar}.pid") 2>&1 > /dev/null || true
+          kill $(jobs -p)
+          exit
+        }
+      }
+  done
+}
+
+[ "${1}" = "--fetch-dependencies" ] && {
+  url="${2}"
+  id_progress_bar="${2}"
+
+  echo -n "${$}" > "${id_progress_bar}.pid"
+
+  fetchDependencies
+  exit
+}
+
+
+[ "${1}" = "--do-install" ] && {
+  url="${2}"
+  id_progress_bar="${2}"
+
+  echo -n "${$}" > "${id_progress_bar}.pid"
+
+  install_flatpak
+  exit
+}
+
+flatpak list | tr '[[\t]]' ' ' | grep " ${url} " && {
+  show-warning 'Lembrete amigável' "O pacote '${url}' já está instalado no sistema"'!'
+  exit
+}
+
+[ ! -f "${id_progress_bar}.dependencies" ] && {
+  "${SELF}" --fetch-dependencies "${id_progress_bar}"
+}
+
+[ ! -f "${id_progress_bar}.dependencies" ] && {
+  show-error "Ocorreu um erro"  "Não foi possível conectar a FlatHub ou o pacote '${url}' não existe"
+  exit
+}
+
+export dependencies=$(cat "${id_progress_bar}.dependencies")
+rm  "${id_progress_bar}.dependencies"
+
+[ -z "${dependencies}" ] && {
+  show-error "Ocorreu um erro"  "Não foi possível conectar a FlatHub verifique sua conexão com a internet"
+  exit
+}
+
+
+
+TIGER_DIALOG_SHOW_TITLE=1
+TIGER_DIALOG_TITLE="Instalador de programas em Sandbox - Flatpak"
+app_name=$(grep "^${url}" "${XDG_CACHE_DIR}/flatpak_cache.list" | cut -d\| -f2)
+
+[ -z "${app_name}" ] && {
+  app_name="${url}"
+}
+
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.freedesktop.Platform.GL.default$|Driver de vídeo para a Sandbox|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.freedesktop.Platform.VAAPI.Intel$|Driver Intel VAAPI para a Sandbox|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.kde.Platform$|Bibliotecas do projeto KDE|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.gnome.Platform$|Bibliotecas do projeto GNOME|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.freedesktop.Platform$|Bibliotecas do projeto FreeDesktop|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.elementary.Platform$|Bibliotecas do projeto elementary OS|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.kde.Platform.Locale$|Traduções do KDE para ${LANG::-6}|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.freedesktop.Platform.openh264$|Codec h264 para Sandbox|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.gtk.Gtk3theme.*|Tema do sistema para Sandbox|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|${url}.Locale|Traduções do aplicativo para ${LANG::-6}|"
+humanified_dependencies_replaces="${humanified_dependencies_replaces};s|${url}|O aplicativo|"
+
+dependencies_list=$(echo -n "${dependencies}" | sed "${humanified_dependencies_replaces}" | sed "s|^|    •   |g")
+
+ask "Bem-vindo(a) a instalação do ${app_name}" "\nOs seguintes pacotes e recursos precisam ser instalados ou atualizados na Sandbox: \n\n${dependencies_list}\n\nDeseja prosseguir com a instalação?"
+
+[ ! "${?}" = 1 ] && {
+  exit 0
+}
+
+
+"${SELF}" --do-install "${id_progress_bar}" | {
+  yad --multi-progress --bar="Pacote atual ":NORM --bar="Progresso geral   ":NORM --center --borders=32 --width=480  --text="<big><b>Instalando ${app_name}...</b></big>\n" --skip-taskbar --auto-close --hide-text --window-icon=dialog-messages --fixed --title="${TIGER_DIALOG_TITLE}" --button=gtk-cancel:1
+
+  kill $(ps -ax | grep "flatpak install "${url}" --no-static-deltas -y" | grep -Ev "grep" | tr -s '[[:space:]]' | cut -d' ' -f2)
+
+  exit
+}
+
+unset TIGER_DIALOG_SHOW_TITLE
+
+flatpak list | tr '[[\t]]' ' ' | grep " ${url} " && {
+  show-warning 'Sucesso!' "O aplicativo ${app_name} foi instalado com sucesso"'!'
+  exit
+}
+
+show-error "Ocorreu um erro"  "A instalação de ${app_name} falhou"'!'
+
+
