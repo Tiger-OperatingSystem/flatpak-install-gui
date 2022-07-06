@@ -1,2 +1,7 @@
-# flatpak-install-gui
-Um frontend para o comando flatpak install
+# :thinking: O que é?
+
+Esse software fornece uma interface gráfica para o comando `flatpak install` listando as dependências e exibindo o progresso da instalação
+
+# :gear: Como funciona?
+
+Ele usa diversas ferramentas do GNU Text Utils para filtrar a saída do comando `flatpak install` e usa o projeto [Tiger Shell OSD](https://github.com/Tiger-OperatingSystem/tiger-shell-osd) para exibir as telas
