@@ -154,7 +154,7 @@ ask "Bem-vindo(a) a instalação do ${app_name}" "\nOs seguintes pacotes e recur
 "${SELF}" --do-install "${id_progress_bar}" | {
   yad --multi-progress --bar="Pacote atual ":NORM --bar="Progresso geral   ":NORM --center --borders=32 --width=480  --text="<big><b>Instalando ${app_name}...</b></big>\n" --skip-taskbar --auto-close --hide-text --window-icon=dialog-messages --fixed --title="${TIGER_DIALOG_TITLE}" --button=gtk-cancel:1
 
-  kill $(ps -ax | grep "flatpak install "${url}" --no-static-deltas -y" | grep -Ev "grep" | tr -s '[[:space:]]' | cut -d' ' -f2)
+  kill $(ps -ax | grep "flatpak install "${url}" -y" | grep -Ev "grep" | tr -s '[[:space:]]' | cut -d' ' -f2)
 
   exit
 }
