@@ -29,7 +29,7 @@ function install_flatpak() {
   export last_great_value=0
 
   export LC_ALL=C
-  flatpak install ${url} --no-static-deltas -y | while IFS= read -r line; do
+  flatpak install ${url} -y | while IFS= read -r line; do
     line=$(echo "${line}" | grep ^"Installing" | grep -o "...%" | grep -o "[0-9]\+")
     [ ! -z "${line}" ] && {
       [ ${line} -gt ${last_great_value} ] && {
