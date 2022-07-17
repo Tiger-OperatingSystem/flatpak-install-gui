@@ -12,10 +12,10 @@ HERE="$(dirname "$(readlink -f "${0}")")"
 
 working_dir=$(mktemp -d)
 
-mkdir -p "${working_dir}/usr/bin"
-mkdir -p "${working_dir}/DEBIAN/"
+mkdir -p {${working_dir}/DEBIAN,${working_dir}/usr/bin,${working_dir}/usr/share/applications}
 
-cp -v "${HERE}/config" "${HERE}/flatpak-install-gui"        "${working_dir}/usr/bin/"
+cp -v "${HERE}/flatpak-install-gui"        "${working_dir}/usr/bin/"
+cp -v "${HERE}/launcher"                   "${working_dir}/usr/share/applications/flatpak-install-gui.desktop"
 
 chmod +x "${working_dir}/usr/bin/flatpak-install-gui"
 
