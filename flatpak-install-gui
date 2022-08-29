@@ -135,11 +135,11 @@ TIGER_DIALOG_TITLE="Instalador de programas em Sandbox - Flatpak"
 app_name=$(grep "^${url}" "${XDG_CACHE_DIR}/flatpak_cache.list" | cut -d\| -f2)
 
 
-[ -f "${app_name}" ] && {
+[ -f "${url}" ] && {
   app_name=$(grep ^Title= "${app_name}" | cut -d= -f2)
 } || {
   [ -z "${app_name}" ] && {
-    app_name="${url}"
+    app_name=$(basename "${url}")
   }
 }
 
