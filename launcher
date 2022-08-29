@@ -6,5 +6,5 @@ X-KDE-StartupNotify=true
 Icon=mintinstall
 Terminal=false
 Categories=Development;IDE;Qt;
-MimeType= application/vnd.appimage;
+MimeType=application/vnd.flatpak.ref;
 NoDisplay=true
