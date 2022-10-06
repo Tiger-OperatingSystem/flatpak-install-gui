@@ -3,7 +3,9 @@
 export SELF=$(readlink -f "${0}")
 export HERE=$(dirname  "${SELF}")
 
-unset 
+. /usr/lib/tiger-os/tiger-osd.sh
+
+unset APP_OVERRIDE_NAME
 
 echo ${1} | grep -q "^--override-appname=" && {
   APP_OVERRIDE_NAME=$(echo ${1} | cut -c 20-)
@@ -46,8 +48,6 @@ url="${1}"
 
 mkdir -p "${XDG_RUNTIME_DIR}/tiger-store/"
 cd "${XDG_RUNTIME_DIR}/tiger-store/"
-
-. /usr/lib/tiger-os/tiger-osd.sh
 
 function filter_flatpak_install() {
   export general_progress=0
