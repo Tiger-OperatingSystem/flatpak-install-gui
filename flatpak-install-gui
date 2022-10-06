@@ -10,6 +10,27 @@ echo ${1} | grep -q "^--override-appname=" && {
   shift
 }
 
+[ "${1}" = "--remove" ] && {
+  shift
+  
+  TIGER_DIALOG_SHOW_TITLE=1
+  TIGER_DIALOG_TITLE="Instalador de programas em Sandbox - Flatpak"
+
+  ask "Bem-vindo(a) a desinstalação do ${app_name}" "\n\nDeseja prosseguir?"
+
+  [ ! "${?}" = 1 ] && {
+    exit 0
+  }
+  
+  flatpak remove ${1} -y && {
+    show-warning 'Sucesso!' "O aplicativo ${app_name} foi desinstalado com sucesso"'!'
+  } || {
+    show-error "Ocorreu um erro"  "A desinstalação de ${app_name} falhou"'!'
+  }
+  
+  exit 0
+}
+
 [ -z "${XDG_CACHE_DIR}" ] && export XDG_CACHE_DIR="${HOME}/.cache/"
 
 [ -z "XDG_CACHE_DIR" ] && {
