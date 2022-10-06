@@ -3,6 +3,13 @@
 export SELF=$(readlink -f "${0}")
 export HERE=$(dirname  "${SELF}")
 
+unset 
+
+echo ${1} | grep -q "^--override-appname=" && {
+  APP_OVERRIDE_NAME=$(echo ${1} | cut -c 20-)
+  shift
+}
+
 [ -z "${XDG_CACHE_DIR}" ] && export XDG_CACHE_DIR="${HOME}/.cache/"
 
 [ -z "XDG_CACHE_DIR" ] && {
@@ -141,6 +148,10 @@ app_name=$(grep "^${url}" "${XDG_CACHE_DIR}/flatpak_cache.list" | cut -d\| -f2)
   [ -z "${app_name}" ] && {
     app_name=$(basename "${url}")
   }
+}
+
+[ ! -z "${APP_OVERRIDE_NAME}" ] && {
+  app_name="${APP_OVERRIDE_NAME}"
 }
 
 humanified_dependencies_replaces="${humanified_dependencies_replaces};s|^org.freedesktop.Platform.GL.default$|Driver de vídeo para a Sandbox|"
