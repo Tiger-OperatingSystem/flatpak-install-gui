@@ -9,6 +9,7 @@ unset APP_OVERRIDE_NAME
 
 echo ${1} | grep -q "^--override-appname=" && {
   APP_OVERRIDE_NAME=$(echo ${1} | cut -c 20-)
+  app_name=$(echo ${1} | cut -c 20-)
   shift
 }
 
